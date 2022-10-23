@@ -7,6 +7,7 @@ import (
 
 	"github.com/AhmedBenAbdessalam/MMOGame/engine/asset"
 	"github.com/AhmedBenAbdessalam/MMOGame/engine/render"
+	"github.com/AhmedBenAbdessalam/MMOGame/engine/tilemap"
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 )
@@ -65,6 +66,27 @@ func runGame() {
 		Right: pixelgl.KeyD,
 	}))
 
+	grassSprite, err := spritesheet.Get("grass.png")
+	if err != nil {
+		panic(err)
+	}
+	tileSize := 16
+	mapSize := 100
+	tiles := make([][]tilemap.Tile, mapSize)
+	for x := range tiles {
+		tiles[x] = make([]tilemap.Tile, mapSize)
+		for y := range tiles[x] {
+
+			tiles[x][y] = tilemap.Tile{
+				Type:   0,
+				Sprite: grassSprite,
+			}
+		}
+	}
+	batch := pixel.NewBatch(&pixel.TrianglesData{}, spritesheet.Picture())
+	tmap := tilemap.New(tiles, batch, tileSize)
+	tmap.Rebatch()
+
 	camera := render.NewCamera(win, 0, 0)
 	zoomSpeed := 0.1
 
@@ -84,7 +106,7 @@ func runGame() {
 		camera.Update()
 
 		win.SetMatrix(camera.Mat())
-
+		tmap.Draw(win)
 		for i := range people {
 			people[i].Draw(win)
 
