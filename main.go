@@ -1,10 +1,11 @@
 package main
 
+//go:generate  $GOPATH\pkg\mod\github.com\unitoftime\packer@v0.0.0-20220105185326-f541e031de11\cmd\packer\packer.exe --input images --stats
+
 import (
-	"image"
-	_ "image/png"
 	"os"
 
+	"github.com/AhmedBenAbdessalam/MMOGame/engine/asset"
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 )
@@ -27,8 +28,14 @@ func runGame() {
 		panic(err)
 	}
 	win.SetSmooth(false)
+	load := asset.NewLoad(os.DirFS("./"))
 
-	knightSprite, err := getSprite("knight.png")
+	spritesheet, err := load.SpriteSheet("packed.json")
+	if err != nil {
+		panic(err)
+	}
+
+	knightSprite, err := spritesheet.Get("knight.png")
 	if err != nil {
 		panic(err)
 	}
@@ -55,22 +62,4 @@ func runGame() {
 		knightSprite.Draw(win, pixel.IM.Scaled(pixel.ZV, 2.0).Moved(knightPosition))
 		win.Update()
 	}
-}
-
-func getSprite(path string) (*pixel.Sprite, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	img, _, err := image.Decode(file)
-	if err != nil {
-		return nil, err
-	}
-
-	pic := pixel.PictureDataFromImage(img)
-
-	return pixel.NewSprite(pic, pic.Bounds()), nil
-
 }
