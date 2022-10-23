@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/AhmedBenAbdessalam/MMOGame/engine/asset"
+	"github.com/AhmedBenAbdessalam/MMOGame/engine/render"
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 )
@@ -42,24 +43,93 @@ func runGame() {
 
 	knightPosition := win.Bounds().Center()
 
+	knight2Sprite, err := spritesheet.Get("knight2.png")
+	if err != nil {
+		panic(err)
+	}
+
+	knight2Position := win.Bounds().Center()
+
+	people := make([]Person, 0)
+
+	people = append(people, NewPerson(knightSprite, knightPosition, Keybinds{
+		Up:    pixelgl.KeyUp,
+		Down:  pixelgl.KeyDown,
+		Left:  pixelgl.KeyLeft,
+		Right: pixelgl.KeyRight,
+	}))
+	people = append(people, NewPerson(knight2Sprite, knight2Position, Keybinds{
+		Up:    pixelgl.KeyW,
+		Down:  pixelgl.KeyS,
+		Left:  pixelgl.KeyA,
+		Right: pixelgl.KeyD,
+	}))
+
+	camera := render.NewCamera(win, 0, 0)
+	zoomSpeed := 0.1
+
 	for !win.JustPressed(pixelgl.KeyEscape) {
 		win.Clear(pixel.RGB(0, 0, 0))
 
-		// input handling
-		if win.Pressed(pixelgl.KeyLeft) {
-			knightPosition.X -= 2.0
-		}
-		if win.Pressed(pixelgl.KeyRight) {
-			knightPosition.X += 2.0
-		}
-		if win.Pressed(pixelgl.KeyUp) {
-			knightPosition.Y += 2.0
-		}
-		if win.Pressed(pixelgl.KeyDown) {
-			knightPosition.Y -= 2.0
+		scroll := win.MouseScroll()
+		if scroll.Y != 0 {
+			camera.Zoom += zoomSpeed * scroll.Y
 		}
 
-		knightSprite.Draw(win, pixel.IM.Scaled(pixel.ZV, 2.0).Moved(knightPosition))
+		for i := range people {
+			people[i].HandleInput(win)
+		}
+
+		camera.Position = people[0].Position
+		camera.Update()
+
+		win.SetMatrix(camera.Mat())
+
+		for i := range people {
+			people[i].Draw(win)
+
+		}
+		win.SetMatrix(pixel.IM)
+
 		win.Update()
 	}
+}
+
+type Keybinds struct {
+	Up, Down, Left, Right pixelgl.Button
+}
+
+type Person struct {
+	Sprite   *pixel.Sprite
+	Position pixel.Vec
+	Keybinds Keybinds
+}
+
+func NewPerson(sprite *pixel.Sprite, position pixel.Vec, keybinds Keybinds) Person {
+	return Person{
+		sprite,
+		position,
+		keybinds,
+	}
+}
+
+func (p *Person) Draw(win *pixelgl.Window) {
+	p.Sprite.Draw(win, pixel.IM.Moved(p.Position))
+}
+
+func (p *Person) HandleInput(win *pixelgl.Window) {
+
+	if win.Pressed(p.Keybinds.Up) {
+		p.Position.Y += 2.0
+	}
+	if win.Pressed(p.Keybinds.Down) {
+		p.Position.Y -= 2.0
+	}
+	if win.Pressed(p.Keybinds.Left) {
+		p.Position.X -= 2.0
+	}
+	if win.Pressed(p.Keybinds.Right) {
+		p.Position.X += 2.0
+	}
+
 }
